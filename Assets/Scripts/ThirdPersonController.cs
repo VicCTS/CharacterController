@@ -5,6 +5,7 @@ using UnityEngine;
 public class ThirdPersonController : MonoBehaviour
 {
     private CharacterController controller;
+    private Animator anim;
     public Transform cam;
     public Transform LookAtTransform;
 
@@ -41,6 +42,7 @@ public class ThirdPersonController : MonoBehaviour
     {
         //Asignamos el character controller a su variable
         controller = GetComponent<CharacterController>();
+        anim = GetComponentInChildren<Animator>();
 
         //Con esto podemos esconder el icono del raton para que no moleste
         Cursor.lockState = CursorLockMode.Locked;
@@ -89,6 +91,11 @@ public class ThirdPersonController : MonoBehaviour
     {
         //Creamos un Vector3 y en los ejes X y Z le asignamos los inputs de movimiento
         Vector3 move = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+
+        anim.SetFloat("VelZ", z);
+        anim.SetFloat("VelX", x);
 
         if(move != Vector3.zero)
         {
@@ -177,6 +184,8 @@ public class ThirdPersonController : MonoBehaviour
         //si estamos en el suelo y pulasamos el imput de salto hacemos que salte el personaje
         if(isGrounded && Input.GetButtonDown("Jump"))
         {
+            anim.SetBool("IsJumping", true);
+
             //Formula para hacer que los saltos sean de una altura concreta
             //la altura depende del valor de jumpHeight 
             //Si jumpHeigt es 1 saltara 1 metro de alto
@@ -194,43 +203,79 @@ public class ThirdPersonController : MonoBehaviour
 #region FuncionCoger
     void PickObjects()
     {
+        //Cuando pulsemos la tecla E
         if(Input.GetKeyDown(KeyCode.E))
         {
+            //si no llevamos ningun objeto, dentro de nuestro radio hay algun objeto que podamos coger y ese objeto es reccogible
             if(objectToPick != null && pickedObject == null && objectToPick.gameObject.GetComponent<PickableObject>().isPickable == true)
             {
+                //a pickedObject le asignamos el objeto que vamos a recoger
                 pickedObject = objectToPick;
+                //al objeto que vamos a recoger la cambiamos la variable isPicable a false
                 pickedObject.GetComponent<PickableObject>().isPickable = false;
+                //Hacemos que el objeto sea hijo del empty interaction zone para que el objeto nos siga
                 pickedObject.transform.SetParent(interactionZone);
+                //modificamos la posicion del objeto para que este en el centro de la interaction zone
+                //Esto seria mejor crear otro empty dentro de nuestro personaje en la posicion de la mano y hacer que el objeto se coloque alli
                 pickedObject.transform.position = interactionZone.position;
+                //Desactivamos la gravedad del objeto para que no se caiga
                 pickedObject.GetComponent<Rigidbody>().useGravity = false;
+                //convertimos el objeto en kinematic para que no le afecten las fisicas
                 pickedObject.GetComponent<Rigidbody>().isKinematic = true;
             }
+            //Si llevamos un objeto
             else if(pickedObject != null)
             {
+                //Ponemos la variable isPickable del objeto que llevamos en true para que se pueda volver a recoger
                 pickedObject.GetComponent<PickableObject>().isPickable = true;
+                //Hacemos que deje de ser hijo del personaje para que deje de seguirlo
                 pickedObject.transform.SetParent(null);
+                //Activamos que le afecte la gravedad
                 pickedObject.GetComponent<Rigidbody>().useGravity = true;
+                //desactivamos el kinematic para que le vuelvan a afectar las fisicas
                 pickedObject.GetComponent<Rigidbody>().isKinematic = false;
+                //vaciamos nuestra variable de pickedObject para que podamos recoger otro
                 pickedObject = null;
             }
         }
     }
 #endregion
 
+    //Funcion que detecta colisiones del Character Controller con objetos que tengan Collider
     private void OnControllerColliderHit(ControllerColliderHit hit) 
     {
+        //si tocamos un objeto con el tag de Empujable
         if(hit.gameObject.tag == "Empujable")
         {
+            //Creamos una variable temporal para almacenar el Rigidbody del objeto que tocamos
             Rigidbody body = hit.collider.attachedRigidbody;
 
+            //Si el objeto no tiene Rigidbody o es Kinetico dejamos de ejecutar el codigo
             if(body == null || body.isKinematic)
             {
                 return;
             }
 
+            //Variable temporal para almacenar la direccion en la que empujaremos el objeto
             Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
 
+            //Le añadimos velocidad al Rigidbody del objeto en la direccion deseada
+            //Lo multiplicamos por una variable de fuerza para poder modificar la fuerza para empujar cosas del personaje
+            //Dividimos por la massa del Rigidbody del objeto para que objetos mas pesado cueste mas moverlos
             body.velocity = pushDir * pushStrength / body.mass;
         }
+
+        //Cuando tocamos la layer del suelo desactivamos la animacion de salto
+        if(hit.gameObject.layer == 3)
+        {
+            anim.SetBool("IsJumping", false);
+        }
+    }
+
+    //Funcion para dibujar Gizmos
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(groundSensor.position, sensorRadius);
     }
 }

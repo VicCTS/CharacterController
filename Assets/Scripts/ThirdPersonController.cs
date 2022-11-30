@@ -6,6 +6,13 @@ public class ThirdPersonController : MonoBehaviour
 {
     private CharacterController controller;
     private Animator anim;
+
+    //Cosas para el Ragdoll
+    private Rigidbody[] ragdollBodies;
+    private SphereCollider[] sphereColliders;
+    private CapsuleCollider[] capsuleColliders;
+    private bool isRagdoll = false;
+
     public Transform cam;
     public Transform LookAtTransform;
 
@@ -44,6 +51,25 @@ public class ThirdPersonController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         anim = GetComponentInChildren<Animator>();
 
+        ragdollBodies = GetComponentsInChildren<Rigidbody>();
+        sphereColliders = GetComponentsInChildren<SphereCollider>();
+        capsuleColliders = GetComponentsInChildren<CapsuleCollider>();
+
+        foreach (Rigidbody body in ragdollBodies)
+        {
+            body.isKinematic = true;
+        }
+
+        foreach (SphereCollider sphere in sphereColliders)
+        {
+            sphere.enabled = false;
+        }
+
+        foreach (CapsuleCollider capsule in capsuleColliders)
+        {
+            capsule.enabled = false;
+        }
+
         //Con esto podemos esconder el icono del raton para que no moleste
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -51,14 +77,19 @@ public class ThirdPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Llamamos la funcion de movimiento
-        //Movement();
-        MovementTPS();
-        //MovementTPS2();
-        
-        //Lamamaos la funcion de salto
-        Jump();
-        PickObjects();
+        if(!isRagdoll) //Esto es lo mismo que isRagdoll == false
+        {
+            //Llamamos la funcion de movimiento
+            //Movement();
+            MovementTPS();
+            //MovementTPS2();
+            
+            //Lamamaos la funcion de salto
+            Jump();
+            PickObjects();
+        }
+
+        Ragdolls();
     }
 #region FuncionesDeMovimiento
     void Movement()
@@ -277,5 +308,29 @@ public class ThirdPersonController : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(groundSensor.position, sensorRadius);
+    }
+
+    void Ragdolls()
+    {
+        if(Input.GetKeyDown(KeyCode.F))
+        {
+            foreach (Rigidbody body in ragdollBodies)
+            {
+                body.isKinematic = false;
+            }
+
+            foreach (SphereCollider sphere in sphereColliders)
+            {
+                sphere.enabled = true;
+            }
+
+            foreach (CapsuleCollider capsule in capsuleColliders)
+            {
+                capsule.enabled = true;
+            }
+
+            controller.enabled = false;
+            anim.enabled = false;
+        }
     }
 }

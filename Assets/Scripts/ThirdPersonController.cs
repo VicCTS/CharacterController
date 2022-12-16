@@ -314,23 +314,48 @@ public class ThirdPersonController : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.F))
         {
-            foreach (Rigidbody body in ragdollBodies)
+            if(!isRagdoll)
             {
-                body.isKinematic = false;
-            }
+                foreach (Rigidbody body in ragdollBodies)
+                {
+                    body.isKinematic = false;
+                }
 
-            foreach (SphereCollider sphere in sphereColliders)
+                foreach (SphereCollider sphere in sphereColliders)
+                {
+                    sphere.enabled = true;
+                }
+
+                foreach (CapsuleCollider capsule in capsuleColliders)
+                {
+                    capsule.enabled = true;
+                }
+
+                controller.enabled = false;
+                anim.enabled = false;
+                isRagdoll = true;
+            }
+            else
             {
-                sphere.enabled = true;
-            }
+                foreach (Rigidbody body in ragdollBodies)
+                {
+                    body.isKinematic = true;
+                }
 
-            foreach (CapsuleCollider capsule in capsuleColliders)
-            {
-                capsule.enabled = true;
-            }
+                foreach (SphereCollider sphere in sphereColliders)
+                {
+                    sphere.enabled = false;
+                }
 
-            controller.enabled = false;
-            anim.enabled = false;
+                foreach (CapsuleCollider capsule in capsuleColliders)
+                {
+                    capsule.enabled = false;
+                }
+
+                controller.enabled = true;
+                anim.enabled = true;
+                isRagdoll = false;
+            }
         }
     }
 }

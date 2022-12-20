@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class IsometricMovement : MonoBehaviour
 {
-    CharacterController controller;
+    //CharacterController controller;
+    Rigidbody rbody;
     Animator anim;
+    Vector3 move;
 
     public float speed = 8;
     
@@ -17,7 +19,7 @@ public class IsometricMovement : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
+        rbody = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
     }
 
@@ -25,7 +27,7 @@ public class IsometricMovement : MonoBehaviour
     void Update()
     {
         //Movimiento
-        Vector3 move = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+        move = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
 
         float velZ = Vector3.Dot(move.normalized, transform.forward);
         float velX = Vector3.Dot(move.normalized, transform.right);
@@ -33,11 +35,13 @@ public class IsometricMovement : MonoBehaviour
         anim.SetFloat("VelZ", velZ);
         anim.SetFloat("VelX", velX);
 
-        controller.Move(move.normalized * speed * Time.deltaTime);
+        
+
+        //controller.Move(move.normalized * speed * Time.deltaTime);
 
         
         //Gravedad
-        if(controller.isGrounded && playerVelocity.y < 0)
+        /*if(controller.isGrounded && playerVelocity.y < 0)
         {
             playerVelocity.y = 0;
         }
@@ -45,9 +49,9 @@ public class IsometricMovement : MonoBehaviour
         if(!controller.isGrounded)
         {
             playerVelocity.y += gravity;
-        }
+        }*/
 
-        controller.Move(playerVelocity * Time.deltaTime);
+        //controller.Move(playerVelocity * Time.deltaTime);
 
         //Rotacion con raycast
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -58,5 +62,10 @@ public class IsometricMovement : MonoBehaviour
             direction.y = 0;
             transform.forward = direction;
         }
+    }
+
+    void FixedUpdate()
+    {
+        rbody.AddForce(move.normalized * speed, ForceMode.Force);
     }
 }
